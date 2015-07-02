@@ -19,19 +19,37 @@
 		return target;
 	}
 	
-	var require = global.require,
+	var origRequire = global.require,
 		define = global.define,
+		require = origRequire,
 		tquire,
 		count  = 0,
+		requiredCallbacks = [],
+		doneCallbacks = [],
+		requireSuite = 0,
 		defConfig = {};
 
+	if (typeof global.tquire !== 'undefined' && isObject(global.tquire)) {
+		extend(defConfig, global.tquire);
+	}
+
 	function Tquire(cfg) {
-		this.config         = extend(defConfig, cfg);
-		this._require       = require.config(this.config);
-		this._hooks          = {};
+		this.config         = extend({}, defConfig, cfg, { "context" : "context" + count++ });
+		this._require       = origRequire.config(this.config);
+		this._hooks         = [];
+		this._hookSeq       = 0;
 		this.asyncRemaining = 0;
 		this.required       = false;
+		global.require      = this._require;
 	}
+
+	Tquire.requireDone = function(callback) {
+		requiredCallbacks.push(callback);
+	};
+
+	Tquire.done = function(callback) {
+		doneCallbacks.push(callback);
+	};
 
 	Tquire.prototype = {
 		/**
@@ -43,21 +61,14 @@
 		hook: function(id, callback) {
 			var self = this;
 			self.asyncRemaining++;
+			var seq = self._hookSeq++;
 			self._require([id], function(module) {
-				self._hooks[id] = callback.call(this, module);
+				self._hooks[seq] = callback.call(this, module);
 				if ( ! --self.asyncRemaining && self.required === true ) {
 					self.require(self.requiredID, self.requiredCallback);
 				}
 			});
 			return self;
-		},
-
-		/**
-		 * Get hook returns
-		 * @return {object} module
-		 */
-		hooks: function(id) {
-			return this._hooks[id];
 		},
 
 		/**
@@ -76,14 +87,29 @@
 				this.required = false;
 				this.requiredID = null;
 				this.requiredCallback = null;
+				requireSuite++;
 
 				this._require([id], function(module) {
-					callback.call(this, module, self);
+					callback.apply(this, self._hooks.concat(module));
+					// Fired required done event
+					for (var i = 0, len = requiredCallbacks.length; i < len; i++) {
+						requiredCallbacks[i].call(this, {
+							id: id,
+							module: module
+						});
+					}
+					if ( ! --requireSuite ) {
+						// Fire all done event
+						for (var i = 0, len = doneCallbacks.length; i < len; i++) {
+							doneCallbacks[i].call(this);
+						}
+					}
 				});
 			}
 		}
 	};
 
+	global.Tquire = Tquire;
 	global.tquire = tquire = function(cfg) {
 		return new Tquire(cfg);
 	};
