@@ -2,8 +2,4 @@
 
 ## Simple Tool for AMD javascript unit testing
 
-### Example
-
-``` html
-<html></html>
-```
+Work on [QUnit](https://qunitjs.com/) and [SinonJS](http://sinonjs.org/)
