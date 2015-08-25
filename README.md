@@ -2,4 +2,4 @@
 
 ## Simple Tool for AMD javascript unit testing
 
-Work on [QUnit](https://qunitjs.com/) and [SinonJS](http://sinonjs.org/)
+Work on [RequireJS](http://requirejs.org/), [QUnit](https://qunitjs.com/) and [SinonJS](http://sinonjs.org/)
