@@ -21,11 +21,12 @@ tquire()
 		.withArgs("arg2").returns(false);
 	return b;
 })
+// 
 // .hook('modulec', function() {})
 // .hook('moduled', function() {})
 // ... can hook more module
 .require('modulea', function(b /*, c , d */, a) {
-	
+
 	QUnit.module('modulea');
 
 	QUnit.test('first testing', function(assert) {
